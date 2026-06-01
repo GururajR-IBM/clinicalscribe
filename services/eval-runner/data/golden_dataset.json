@@ -1,0 +1,76 @@
+[
+  {
+    "id": "CASE-001",
+    "description": "Hypertension follow-up with lisinopril titration",
+    "transcript": "Patient is a 58-year-old male presenting for blood pressure follow-up. Current medications include lisinopril 10 mg daily. BP today is 148/92. Patient reports occasional headaches. No dizziness or syncope. Denies chest pain. Recommending increase of lisinopril to 20 mg daily. Repeat labs in 4 weeks including BMP to monitor potassium and creatinine. Return to clinic in 6 weeks.",
+    "expected_soap": {
+      "S": "58-year-old male presenting for BP follow-up. Reports occasional headaches. Denies chest pain, dizziness, or syncope. Current medication: lisinopril 10 mg daily.",
+      "O": "BP: 148/92 mmHg. No acute distress.",
+      "A": "Hypertension, inadequately controlled on current dose. ICD-10: I10.",
+      "P": "Increase lisinopril to 20 mg daily. BMP in 4 weeks (monitor K+ and creatinine). Follow-up in 6 weeks."
+    },
+    "expected_codes": ["I10"],
+    "expected_drugs": [],
+    "interaction_warnings": []
+  },
+  {
+    "id": "CASE-002",
+    "description": "Type 2 diabetes management with metformin + glipizide combo risk",
+    "transcript": "Patient is a 65-year-old female with type 2 diabetes diagnosed 8 years ago. She takes metformin 1000 mg twice daily. HbA1c today is 8.4%. I am adding glipizide 5 mg before breakfast. Patient should monitor blood glucose daily. Discussed hypoglycemia risk — patient should eat breakfast before taking glipizide. Low sodium diet reinforced. Referral to diabetes educator placed.",
+    "expected_soap": {
+      "S": "65-year-old female with 8-year history of type 2 diabetes. On metformin 1000 mg BID. No current hypoglycemic episodes reported.",
+      "O": "HbA1c 8.4%.",
+      "A": "Type 2 diabetes mellitus, uncontrolled. ICD-10: E11.65.",
+      "P": "Add glipizide 5 mg before breakfast. Educate on hypoglycemia risk and importance of eating before dose. Daily glucose monitoring. Diabetes educator referral. Low sodium diet counseling."
+    },
+    "expected_codes": ["E11.65", "Z71.3"],
+    "expected_drugs": [],
+    "interaction_warnings": [
+      {"drugs": ["metformin", "glipizide"], "severity": "low", "description": "Additive glucose-lowering effect; monitor for hypoglycemia."}
+    ]
+  },
+  {
+    "id": "CASE-003",
+    "description": "Acute URTI with antibiotic decision",
+    "transcript": "Patient is a 34-year-old female with 3 days of sore throat, low-grade fever 100.4 F, and mild cough. Rapid strep negative. Throat appears mildly erythematous. No exudates. Lymph nodes mildly enlarged. Impression is viral upper respiratory tract infection. No antibiotic indicated. Recommended rest, fluids, acetaminophen PRN. Return if symptoms worsen or fever persists beyond 5 days.",
+    "expected_soap": {
+      "S": "34-year-old female with 3 days of sore throat, low-grade fever, and mild cough. Denies prior antibiotic use.",
+      "O": "Temp 100.4 F. Throat mildly erythematous, no exudates. Mild anterior cervical lymphadenopathy. Rapid strep: negative.",
+      "A": "Viral upper respiratory tract infection. ICD-10: J06.9.",
+      "P": "No antibiotics indicated. Acetaminophen PRN for fever and pain. Adequate hydration and rest. Return to clinic if fever persists > 5 days or symptoms worsen."
+    },
+    "expected_codes": ["J06.9"],
+    "expected_drugs": [],
+    "interaction_warnings": []
+  },
+  {
+    "id": "CASE-004",
+    "description": "Post-op knee follow-up with pain management",
+    "transcript": "Patient is a 72-year-old male 6 weeks post total knee replacement, left knee. He reports 6 out of 10 pain controlled with Percocet. Physical therapy 3 times a week. Range of motion 0 to 95 degrees. Wound well-healed, no signs of infection. Opioid plan: taper to half dose next week, target stopping by week 10. X-ray shows appropriate prosthesis positioning. Continue PT. Follow up in 4 weeks.",
+    "expected_soap": {
+      "S": "72-year-old male, 6 weeks post L TKR. Reports 6/10 pain managed with Percocet. Attending PT 3x/week.",
+      "O": "ROM 0-95 degrees. Wound well-healed, no signs of infection. X-ray: appropriate prosthesis positioning.",
+      "A": "Status post total left knee replacement, recovery on track. ICD-10: Z96.652.",
+      "P": "Taper Percocet to half dose next week; target discontinuation by week 10. Continue PT 3x/week. Follow-up in 4 weeks."
+    },
+    "expected_codes": ["Z96.652", "M25.362"],
+    "expected_drugs": [],
+    "interaction_warnings": []
+  },
+  {
+    "id": "CASE-005",
+    "description": "Warfarin + NSAID polypharmacy in afib patient",
+    "transcript": "Patient is a 80-year-old female with atrial fibrillation on warfarin 5 mg daily. INR today 2.4, within target range 2-3. She mentions she has been taking ibuprofen 400 mg twice daily for knee pain for the past week. I discussed the serious bleeding risk of combining NSAIDs with warfarin. Advised stopping ibuprofen immediately and using acetaminophen for pain instead. CBC today shows no anemia. Will recheck INR in 2 weeks.",
+    "expected_soap": {
+      "S": "80-year-old female with AFib on warfarin. Using ibuprofen 400 mg BID for knee pain. Denies active bleeding.",
+      "O": "INR 2.4 (target 2-3). CBC: no anemia.",
+      "A": "Atrial fibrillation on anticoagulation. NSAID/warfarin co-administration with significant bleeding risk identified. ICD-10: I48.91.",
+      "P": "Discontinue ibuprofen immediately — NSAID/warfarin interaction risk. Substitute acetaminophen PRN for knee pain. Recheck INR in 2 weeks. Warfarin 5 mg daily continued."
+    },
+    "expected_codes": ["I48.91", "Z79.01"],
+    "expected_drugs": ["warfarin", "ibuprofen"],
+    "interaction_warnings": [
+      {"drugs": ["warfarin", "ibuprofen"], "severity": "high", "description": "NSAIDs potentiate anticoagulation effect and increase GI bleeding risk. Avoid combination."}
+    ]
+  }
+]

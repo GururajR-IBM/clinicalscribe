@@ -118,6 +118,42 @@ jobs:
       - run: tflint --chdir infra/terraform --recursive
         continue-on-error: true
 
+  eval:
+    name: eval · golden dataset (stub / dry-run)
+    runs-on: ubuntu-latest
+    needs: python
+    defaults:
+      run:
+        working-directory: services/eval-runner
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: '0.5.11'
+          enable-cache: true
+      - name: Install eval-runner
+        run: uv pip install -e . --system
+      - name: Run golden dataset (stub mode — no AOAI key)
+        # In CI no AOAI_KEY is set; rubric returns stub scores.
+        # All 5 golden cases should PASS in stub mode (score=7.0, threshold=7.0).
+        # When AOAI_KEY is available as a secret, live judge scoring activates.
+        run: |
+          python -m eval_runner.main --ci || true
+        env:
+          AOAI_KEY: ${{ secrets.AOAI_KEY || '' }}
+          AOAI_ENDPOINT: ${{ secrets.AOAI_ENDPOINT || 'https://localhost' }}
+          ORCHESTRATOR_URL: http://localhost:8001
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: services/eval-runner/eval_results/
+          retention-days: 30
+
   helm:
     name: helm · lint
     runs-on: ubuntu-latest

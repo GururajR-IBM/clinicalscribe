@@ -82,7 +82,9 @@ async def update_encounter(
     status: EncounterStatus,
     transcript: str | None = None,
     soap_draft: dict | None = None,
+    soap_final: dict | None = None,
     error_message: str | None = None,
+    cosmos_run_id: uuid.UUID | None = None,
 ) -> None:
     import json
 
@@ -93,13 +95,78 @@ async def update_encounter(
                SET status        = $1,
                    transcript    = COALESCE($2, transcript),
                    soap_draft    = COALESCE($3::jsonb, soap_draft),
-                   error_message = COALESCE($4, error_message),
+                   soap_final    = COALESCE($4::jsonb, soap_final),
+                   error_message = COALESCE($5, error_message),
+                   cosmos_run_id = COALESCE($6, cosmos_run_id),
                    updated_at    = now()
-             WHERE encounter_id = $5
+             WHERE encounter_id = $7
             """,
             status,
             transcript,
             json.dumps(soap_draft) if soap_draft else None,
+            json.dumps(soap_final) if soap_final else None,
             error_message,
+            cosmos_run_id,
             encounter_id,
         )
+
+
+async def insert_codes(
+    pool: asyncpg.Pool,
+    *,
+    encounter_id: uuid.UUID,
+    codes: list[dict],
+) -> None:
+    """Bulk-insert suggested codes from the Coder agent."""
+    import json
+
+    if not codes:
+        return
+    async with pool.acquire() as conn:
+        await conn.executemany(
+            """
+            INSERT INTO codes (encounter_id, code, code_type, description, confidence, justification)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT DO NOTHING
+            """,
+            [
+                (
+                    encounter_id,
+                    c.get("code", ""),
+                    c.get("code_type", "icd10"),
+                    c.get("description", ""),
+                    c.get("confidence", "low"),
+                    c.get("justification", ""),
+                )
+                for c in codes
+            ],
+        )
+
+
+async def insert_drug_warnings(
+    pool: asyncpg.Pool,
+    *,
+    encounter_id: uuid.UUID,
+    warnings: list[dict],
+) -> None:
+    """Bulk-insert drug interaction warnings."""
+    if not warnings:
+        return
+    async with pool.acquire() as conn:
+        await conn.executemany(
+            """
+            INSERT INTO drug_interaction_warnings (encounter_id, drugs, severity, description)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT DO NOTHING
+            """,
+            [
+                (
+                    encounter_id,
+                    w.get("drugs", []),
+                    w.get("severity", "unknown"),
+                    w.get("description", ""),
+                )
+                for w in warnings
+            ],
+        )
+

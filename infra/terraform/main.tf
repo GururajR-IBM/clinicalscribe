@@ -100,3 +100,40 @@ resource "azurerm_resource_group" "main" {
 #   aoai_endpoint              = module.aoai.endpoint
 #   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
 # }
+
+# ── Phase 4 — Postgres Flexible Server ────────────────────────────────────
+# Schema: users, encounters, notes, codes, approvals, audit_log, drug_interaction_warnings
+# Migrations: db/alembic/ (alembic upgrade head)
+# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# module "postgres" {
+#   source = "./modules/postgres"
+#   name_prefix                = local.name_prefix
+#   location                   = azurerm_resource_group.main.location
+#   resource_group_name        = azurerm_resource_group.main.name
+#   tags                       = local.tags
+#   sku_name                   = var.environment == "prod" ? "GP_Standard_D2s_v3" : "B_Standard_B1ms"
+#   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
+# }
+
+# -- Phase 6 -- VNet + subnets + NSGs + private DNS + private endpoints --
+# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# module "network" {
+#   source = "./modules/network"
+#   name_prefix                = local.name_prefix
+#   location                   = azurerm_resource_group.main.location
+#   resource_group_name        = azurerm_resource_group.main.name
+#   tags                       = local.tags
+#   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
+# }
+
+# -- Phase 6 -- APIM Consumption gateway (Clerk JWT + rate limit) --
+# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# module "apim" {
+#   source = "./modules/apim"
+#   name_prefix                = local.name_prefix
+#   location                   = azurerm_resource_group.main.location
+#   resource_group_name        = azurerm_resource_group.main.name
+#   tags                       = local.tags
+#   sku_name                   = var.environment == "prod" ? "Developer_1" : "Consumption_0"
+#   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
+# }

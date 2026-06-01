@@ -30,6 +30,8 @@ from ingestion_worker.db import (
     claim_pending_encounter,
     ensure_schema,
     get_pool,
+    insert_codes,
+    insert_drug_warnings,
     update_encounter,
 )
 from ingestion_worker.speech import transcribe
@@ -86,15 +88,22 @@ async def _process_encounter(pool, row: dict) -> None:
                 },
             )
             resp.raise_for_status()
-            soap_draft = resp.json()
+            result = resp.json()
+
+        soap_final = result.get("soap")
+        codes = result.get("codes", [])
+        warnings = result.get("interaction_warnings", [])
 
         await update_encounter(
             pool,
             encounter_id=encounter_id,
             status=EncounterStatus.COMPLETE,
-            soap_draft=soap_draft,
+            soap_draft=soap_final,
+            soap_final=soap_final,
         )
-        log.info("encounter_complete", encounter_id=str(encounter_id))
+        await insert_codes(pool, encounter_id=encounter_id, codes=codes)
+        await insert_drug_warnings(pool, encounter_id=encounter_id, warnings=warnings)
+        log.info("encounter_complete", encounter_id=str(encounter_id), codes=len(codes), warnings=len(warnings))
 
     except Exception as exc:
         log.error("encounter_failed", encounter_id=str(encounter_id), error=str(exc))

@@ -1,6 +1,6 @@
 [project]
 name = "clinicalscribe-eval-runner"
-version = "0.0.1"
+version = "0.1.0"
 description = "Offline evaluator: medical-correctness, citation-faithfulness, coding accuracy."
 requires-python = ">=3.12,<3.13"
 dependencies = [
@@ -9,7 +9,13 @@ dependencies = [
     "httpx>=0.28.0",
     "structlog>=24.4.0",
     "rich>=13.9.0",
+    "openai>=1.50.0",
+    "azure-cosmos>=4.9.0",
+    "typer>=0.15.0",
 ]
+
+[project.scripts]
+eval-runner = "eval_runner.cli:app"
 
 [build-system]
 requires = ["hatchling"]
