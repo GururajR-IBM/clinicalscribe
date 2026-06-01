@@ -1,10 +1,11 @@
-"""FastAPI app entrypoint for the Orchestrator service — Phase 1 (task 1.13).
+"""FastAPI app entrypoint for the Orchestrator service — Phase 2 (task 2.10).
 
 Exposes one internal endpoint:
-  POST /draft  — accepts transcript + metadata, returns SOAP JSON.
+  POST /draft  — accepts transcript + metadata, returns SOAP JSON + codes + warnings.
                Called by the ingestion-worker after transcription.
 
-Phase 2 replaces the single drafter→critic pair with the full MAF topology.
+Phase 2: full 7-agent MAF supervisor topology replaces the Phase 1 drafter.
+Phase 1 drafter.py is retained as a fallback when AOAI_KEY is absent.
 """
 
 from __future__ import annotations
@@ -16,8 +17,14 @@ from fastapi import FastAPI, HTTPException, status
 
 from orchestrator import __version__
 from orchestrator.config import settings
-from orchestrator.drafter import draft_soap
-from orchestrator.schemas import DraftRequest, DraftResponse
+from orchestrator import supervisor
+from orchestrator.schemas import (
+    CodeItem,
+    DraftRequest,
+    DraftResponse,
+    InteractionWarning,
+    SOAPSection,
+)
 
 structlog.configure(
     processors=[
@@ -37,7 +44,7 @@ log = structlog.get_logger()
 app = FastAPI(
     title="ClinicalScribe Orchestrator",
     version=__version__,
-    description="SOAP drafting agent runtime (Phase 1: single-agent drafter + critic).",
+    description="SOAP drafting agent runtime (Phase 2: 7-agent MAF supervisor).",
     docs_url="/docs" if settings.environment != "prod" else None,
     redoc_url="/redoc" if settings.environment != "prod" else None,
 )
@@ -61,14 +68,16 @@ async def readyz() -> dict[str, str]:
     summary="Draft a SOAP note from a clinical transcript",
 )
 async def draft(body: DraftRequest) -> DraftResponse:
-    """Run the SOAP Drafter v0 pipeline and return structured SOAP JSON.
+    """Run the 7-agent MAF supervisor pipeline and return SOAP JSON + codes + warnings.
 
     Called internally by the ingestion-worker. Not exposed publicly.
     Input size is bounded by FastAPI's body limit (default 1 MB).
     """
     log.info("draft_requested", encounter_id=str(body.encounter_id))
     try:
-        soap, model_used, in_tok, out_tok = await draft_soap(
+        state = await supervisor.run(
+            encounter_id=body.encounter_id,
+            patient_id=body.patient_id,
             transcript=body.transcript,
             notes=body.notes,
         )
@@ -79,25 +88,48 @@ async def draft(body: DraftRequest) -> DraftResponse:
             detail="SOAP drafting failed. The encounter will be marked as failed.",
         )
 
+    if state.soap_final is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Supervisor completed but produced no SOAP output.",
+        )
+
+    soap_data = state.soap_final
     log.info(
         "draft_complete",
         encounter_id=str(body.encounter_id),
-        model=model_used,
-        in_tok=in_tok,
-        out_tok=out_tok,
+        in_tok=state.total_input_tokens,
+        out_tok=state.total_output_tokens,
+        codes=len(state.codes),
+        warnings=len(state.interaction_warnings),
     )
 
     return DraftResponse(
         encounter_id=body.encounter_id,
-        soap=soap,
-        model_used=model_used,
-        input_tokens=in_tok,
-        output_tokens=out_tok,
+        soap=SOAPSection(**soap_data),
+        codes=[
+            CodeItem(
+                code=c.code,
+                code_type=c.code_type,
+                description=c.description,
+                confidence=c.confidence,
+                justification=c.justification,
+            )
+            for c in state.codes
+        ],
+        interaction_warnings=[
+            InteractionWarning(
+                drugs=w.drugs,
+                severity=w.severity,
+                description=w.description,
+            )
+            for w in state.interaction_warnings
+        ],
+        model_used=f"supervisor/{settings.aoai_review_model}",
+        input_tokens=state.total_input_tokens,
+        output_tokens=state.total_output_tokens,
     )
 
-
-@app.get("/readyz", tags=["health"])
-async def readyz() -> dict[str, str]:
     return {"status": "ready"}
 
 

@@ -1,0 +1,52 @@
+{
+  "name": "clinical-kb",
+  "fields": [
+    { "name": "id",           "type": "Edm.String",                "key": true,  "searchable": false, "filterable": true,  "retrievable": true  },
+    { "name": "title",        "type": "Edm.String",                "key": false, "searchable": true,  "filterable": false, "retrievable": true,  "analyzerName": "en.microsoft" },
+    { "name": "content",      "type": "Edm.String",                "key": false, "searchable": true,  "filterable": false, "retrievable": true,  "analyzerName": "en.microsoft" },
+    { "name": "icd10",        "type": "Edm.String",                "key": false, "searchable": false, "filterable": true,  "retrievable": true  },
+    { "name": "source",       "type": "Edm.String",                "key": false, "searchable": false, "filterable": true,  "retrievable": true  },
+    { "name": "document_type","type": "Edm.String",                "key": false, "searchable": false, "filterable": true,  "retrievable": true  },
+    {
+      "name": "content_vector",
+      "type": "Collection(Edm.Single)",
+      "searchable": true,
+      "retrievable": false,
+      "dimensions": 1536,
+      "vectorSearchProfile": "clinical-vector-profile"
+    }
+  ],
+  "vectorSearch": {
+    "algorithms": [
+      {
+        "name": "clinical-hnsw",
+        "kind": "hnsw",
+        "hnswParameters": {
+          "metric": "cosine",
+          "m": 4,
+          "efConstruction": 400,
+          "efSearch": 500
+        }
+      }
+    ],
+    "profiles": [
+      {
+        "name": "clinical-vector-profile",
+        "algorithm": "clinical-hnsw"
+      }
+    ]
+  },
+  "semantic": {
+    "configurations": [
+      {
+        "name": "clinical-semantic-config",
+        "prioritizedFields": {
+          "titleField":   { "fieldName": "title"   },
+          "contentFields": [{ "fieldName": "content" }]
+        }
+      }
+    ]
+  },
+  "scoringProfiles": [],
+  "suggesters": []
+}

@@ -13,12 +13,12 @@ locals {
 }
 
 # ── Pending modules (added per phase) ──────────────────────────────────────
+# ── Pending modules (added per phase) ──────────────────────────────────────
 # Phase 1 remaining:
 #   - module "network"      (VNet + subnets + NSG)           task 1.1 pre-req
 #   - module "aks"          (cluster, workload identity)      task 1.1
 #   - module "aoai"         (Azure OpenAI + deployments)      task 1.2
 #   - module "postgres"     (Postgres Flexible Server)        task 1.3
-#   - module "cosmos"       (Cosmos DB NoSQL)                 task 1.4
 #   - module "speech"       (Azure AI Speech)                 task 1.8
 # Phase 6:
 #   - module "apim"         (APIM Consumption)
@@ -72,4 +72,31 @@ resource "azurerm_resource_group" "main" {
 #   location            = azurerm_resource_group.main.location
 #   resource_group_name = azurerm_resource_group.main.name
 #   tags                = local.tags
+# }
+
+# ── Phase 3.1–3.3 — Cosmos DB NoSQL ───────────────────────────────────────
+# Containers: agent_runs, evidence, embeddings, traces
+# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# module "cosmos" {
+#   source = "./modules/cosmos"
+#   name_prefix                = local.name_prefix
+#   location                   = azurerm_resource_group.main.location
+#   resource_group_name        = azurerm_resource_group.main.name
+#   tags                       = local.tags
+#   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
+# }
+
+# ── Phase 3.5 — AI Search (hybrid BM25 + Ada-002 vector + semantic reranker)
+# Index: clinical-kb  (index JSON: scripts/search/create_index.json)
+# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# module "ai_search" {
+#   source = "./modules/ai_search"
+#   name_prefix                = local.name_prefix
+#   location                   = azurerm_resource_group.main.location
+#   resource_group_name        = azurerm_resource_group.main.name
+#   tags                       = local.tags
+#   sku                        = var.environment == "prod" ? "standard" : "basic"
+#   replica_count              = var.environment == "prod" ? 2 : 1
+#   aoai_endpoint              = module.aoai.endpoint
+#   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
 # }
