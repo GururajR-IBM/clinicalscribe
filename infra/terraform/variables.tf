@@ -29,3 +29,15 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "tenant_id" {
+  description = "Azure AD tenant ID — used for Key Vault. Defaults to current client tenant."
+  type        = string
+  default     = ""
+}
+
+variable "kv_admin_object_ids" {
+  description = "AAD object IDs granted Key Vault Administrator role (e.g. your user, CI SP)."
+  type        = list(string)
+  default     = []
+}

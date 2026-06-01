@@ -7,3 +7,21 @@ output "location" {
   description = "Primary region."
   value       = azurerm_resource_group.main.location
 }
+
+# ── Observability — BLOCKED on lab (enable on PAYG) ───────────────────────
+# output "log_analytics_workspace_id" { ... }
+# output "log_analytics_workspace_name" { ... }
+# output "application_insights_id" { ... }
+# output "application_insights_connection_string" { ... }
+
+# ── Storage — BLOCKED on lab (enable on PAYG) ─────────────────────────────
+# output "storage_account_name" { ... }
+# output "encounter_media_container_name" { ... }
+
+# ── Key Vault — BLOCKED on lab (enable on PAYG) ───────────────────────────
+# output "key_vault_name" { ... }
+# output "key_vault_uri" { ... }
+
+# ── Azure OpenAI — BLOCKED on lab (enable on PAYG) ────────────────────────
+# output "aoai_endpoint" { ... }
+# output "aoai_name" { ... }

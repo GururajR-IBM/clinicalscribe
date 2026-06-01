@@ -8,23 +8,68 @@ locals {
   }
   tags = merge(local.default_tags, var.tags)
 
-  # Resource naming: <project>-<env>-<resource>-<region-short>
+  # Resource naming: <project>-<env>-<resource>
   name_prefix = "${var.project}-${var.environment}"
 }
 
-# Phase 0: this file is intentionally minimal. Phase 1 wires in:
-#   - module "network"  (VNet + subnets + NSG)
-#   - module "aks"      (cluster, workload identity, OIDC issuer)
-#   - module "data"     (Cosmos NoSQL, Postgres Flex, Blob)
-#   - module "ai"       (Azure OpenAI, Speech, Doc Intel, Content Safety)
-#   - module "search"   (AI Search)
-#   - module "messaging"(Service Bus)
-#   - module "observability" (Log Analytics, App Insights)
-# Phase 6 adds:
-#   - module "apim"     (APIM Consumption)
+# ── Pending modules (added per phase) ──────────────────────────────────────
+# Phase 1 remaining:
+#   - module "network"      (VNet + subnets + NSG)           task 1.1 pre-req
+#   - module "aks"          (cluster, workload identity)      task 1.1
+#   - module "aoai"         (Azure OpenAI + deployments)      task 1.2
+#   - module "postgres"     (Postgres Flexible Server)        task 1.3
+#   - module "cosmos"       (Cosmos DB NoSQL)                 task 1.4
+#   - module "speech"       (Azure AI Speech)                 task 1.8
+# Phase 6:
+#   - module "apim"         (APIM Consumption)
 
+# ── Resource Group ──────────────────────────────────────────────────────────
 resource "azurerm_resource_group" "main" {
   name     = "${local.name_prefix}-rg"
   location = var.location
   tags     = local.tags
 }
+
+# ── Phase 1.7 — Observability (Log Analytics + App Insights) ───────────────
+# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# module "observability" {
+#   source = "./modules/observability"
+#   name_prefix         = local.name_prefix
+#   location            = azurerm_resource_group.main.location
+#   resource_group_name = azurerm_resource_group.main.name
+#   tags                = local.tags
+# }
+
+# ── Phase 1.5 — Blob Storage (encounter-media) ─────────────────────────────
+# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# module "storage" {
+#   source = "./modules/storage"
+#   name_prefix                = local.name_prefix
+#   location                   = azurerm_resource_group.main.location
+#   resource_group_name        = azurerm_resource_group.main.name
+#   tags                       = local.tags
+#   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
+# }
+
+# ── Phase 1.6 — Key Vault ──────────────────────────────────────────────────
+# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# module "keyvault" {
+#   source = "./modules/keyvault"
+#   name_prefix                = local.name_prefix
+#   location                   = azurerm_resource_group.main.location
+#   resource_group_name        = azurerm_resource_group.main.name
+#   tags                       = local.tags
+#   tenant_id                  = var.tenant_id
+#   admin_object_ids           = var.kv_admin_object_ids
+#   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
+# }
+
+# ── Phase 1.2 — Azure OpenAI ───────────────────────────────────────────────
+# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# module "aoai" {
+#   source = "./modules/aoai"
+#   name_prefix         = local.name_prefix
+#   location            = azurerm_resource_group.main.location
+#   resource_group_name = azurerm_resource_group.main.name
+#   tags                = local.tags
+# }

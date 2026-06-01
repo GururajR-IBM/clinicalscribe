@@ -1,6 +1,13 @@
 environment = "lab"
 location    = "eastus"
 owner       = "Gururajraibagi7@gmail.com"
+
+# Azure AD tenant ID (az account show --query tenantId -o tsv)
+tenant_id = "<your-tenant-id>"
+
+# Object IDs granted Key Vault Administrator (az ad signed-in-user show --query id -o tsv)
+kv_admin_object_ids = ["<your-user-object-id>"]
+
 tags = {
   cost_center = "learn-sandbox"
   ephemeral   = "true"
