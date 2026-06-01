@@ -1,0 +1,94 @@
+# ── OS ────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editors / IDEs ────────────────────────────────────────────────────
+.idea/
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+*.swp
+*.swo
+
+# ── Node / Frontend ───────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+.next/
+out/
+build/
+dist/
+.turbo/
+*.tsbuildinfo
+.eslintcache
+
+# ── Python ────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.venv/
+venv/
+env/
+
+# ── Env / Secrets (NEVER commit) ──────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.*
+**/local.settings.json
+
+# ── Terraform ─────────────────────────────────────────────────────────
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!**/environments/*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# ── Docker ────────────────────────────────────────────────────────────
+*.tar
+.dockerignore.bak
+
+# ── Test outputs / coverage ───────────────────────────────────────────
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+junit*.xml
+
+# ── Eval artifacts ────────────────────────────────────────────────────
+evals/reports/runs/
+evals/.cache/
+
+# ── Logs ──────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Misc ──────────────────────────────────────────────────────────────
+*.bak
+*.tmp
+.cache/
