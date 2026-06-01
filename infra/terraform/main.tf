@@ -12,38 +12,36 @@ locals {
   name_prefix = "${var.project}-${var.environment}"
 }
 
-# ── Pending modules (added per phase) ──────────────────────────────────────
-# ── Pending modules (added per phase) ──────────────────────────────────────
-# Phase 1 remaining:
-#   - module "network"      (VNet + subnets + NSG)           task 1.1 pre-req
-#   - module "aks"          (cluster, workload identity)      task 1.1
-#   - module "aoai"         (Azure OpenAI + deployments)      task 1.2
-#   - module "postgres"     (Postgres Flexible Server)        task 1.3
-#   - module "speech"       (Azure AI Speech)                 task 1.8
-# Phase 6:
-#   - module "apim"         (APIM Consumption)
+# -----------------------------------------------------------------------------
+# All module blocks below are commented out so `terraform apply` is a no-op
+# until the operator opts in. Uncomment the blocks you need. Cost-optimized
+# defaults (Cosmos serverless, Postgres B1ms, AI Search basic, APIM Consumption,
+# LAW 30-day retention) keep an idle deployment well under $50/month.
+#
+# Bring-your-own LLM: Azure OpenAI is NOT provisioned by this stack. The
+# orchestrator + eval-runner read AOAI_ENDPOINT + AOAI_KEY from env vars and
+# can target any AOAI account (e.g. one owned by a different subscription).
+# -----------------------------------------------------------------------------
 
-# ── Resource Group ──────────────────────────────────────────────────────────
 resource "azurerm_resource_group" "main" {
   name     = "${local.name_prefix}-rg"
   location = var.location
   tags     = local.tags
 }
 
-# ── Phase 1.7 — Observability (Log Analytics + App Insights) ───────────────
-# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# -- Observability: Log Analytics + App Insights ------------------------------
 # module "observability" {
-#   source = "./modules/observability"
+#   source              = "./modules/observability"
 #   name_prefix         = local.name_prefix
 #   location            = azurerm_resource_group.main.location
 #   resource_group_name = azurerm_resource_group.main.name
 #   tags                = local.tags
+#   log_retention_days  = 30
 # }
 
-# ── Phase 1.5 — Blob Storage (encounter-media) ─────────────────────────────
-# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# -- Blob Storage (encounter-media) -------------------------------------------
 # module "storage" {
-#   source = "./modules/storage"
+#   source                     = "./modules/storage"
 #   name_prefix                = local.name_prefix
 #   location                   = azurerm_resource_group.main.location
 #   resource_group_name        = azurerm_resource_group.main.name
@@ -51,10 +49,9 @@ resource "azurerm_resource_group" "main" {
 #   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
 # }
 
-# ── Phase 1.6 — Key Vault ──────────────────────────────────────────────────
-# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# -- Key Vault ----------------------------------------------------------------
 # module "keyvault" {
-#   source = "./modules/keyvault"
+#   source                     = "./modules/keyvault"
 #   name_prefix                = local.name_prefix
 #   location                   = azurerm_resource_group.main.location
 #   resource_group_name        = azurerm_resource_group.main.name
@@ -64,21 +61,10 @@ resource "azurerm_resource_group" "main" {
 #   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
 # }
 
-# ── Phase 1.2 — Azure OpenAI ───────────────────────────────────────────────
-# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
-# module "aoai" {
-#   source = "./modules/aoai"
-#   name_prefix         = local.name_prefix
-#   location            = azurerm_resource_group.main.location
-#   resource_group_name = azurerm_resource_group.main.name
-#   tags                = local.tags
-# }
-
-# ── Phase 3.1–3.3 — Cosmos DB NoSQL ───────────────────────────────────────
+# -- Cosmos DB NoSQL (serverless: pay-per-request) ----------------------------
 # Containers: agent_runs, evidence, embeddings, traces
-# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
 # module "cosmos" {
-#   source = "./modules/cosmos"
+#   source                     = "./modules/cosmos"
 #   name_prefix                = local.name_prefix
 #   location                   = azurerm_resource_group.main.location
 #   resource_group_name        = azurerm_resource_group.main.name
@@ -86,27 +72,23 @@ resource "azurerm_resource_group" "main" {
 #   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
 # }
 
-# ── Phase 3.5 — AI Search (hybrid BM25 + Ada-002 vector + semantic reranker)
-# Index: clinical-kb  (index JSON: scripts/search/create_index.json)
-# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# -- AI Search (hybrid: BM25 + vector + semantic reranker on standard SKU) ---
+# Index: clinical-kb (scripts/search/create_index.json)
 # module "ai_search" {
-#   source = "./modules/ai_search"
+#   source                     = "./modules/ai_search"
 #   name_prefix                = local.name_prefix
 #   location                   = azurerm_resource_group.main.location
 #   resource_group_name        = azurerm_resource_group.main.name
 #   tags                       = local.tags
 #   sku                        = var.environment == "prod" ? "standard" : "basic"
-#   replica_count              = var.environment == "prod" ? 2 : 1
-#   aoai_endpoint              = module.aoai.endpoint
+#   replica_count              = 1
 #   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
 # }
 
-# ── Phase 4 — Postgres Flexible Server ────────────────────────────────────
-# Schema: users, encounters, notes, codes, approvals, audit_log, drug_interaction_warnings
+# -- Postgres Flexible Server -------------------------------------------------
 # Migrations: db/alembic/ (alembic upgrade head)
-# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
 # module "postgres" {
-#   source = "./modules/postgres"
+#   source                     = "./modules/postgres"
 #   name_prefix                = local.name_prefix
 #   location                   = azurerm_resource_group.main.location
 #   resource_group_name        = azurerm_resource_group.main.name
@@ -115,10 +97,9 @@ resource "azurerm_resource_group" "main" {
 #   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
 # }
 
-# -- Phase 6 -- VNet + subnets + NSGs + private DNS + private endpoints --
-# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# -- VNet + subnets + NSGs + private DNS + private endpoints (PAYG only) -----
 # module "network" {
-#   source = "./modules/network"
+#   source                     = "./modules/network"
 #   name_prefix                = local.name_prefix
 #   location                   = azurerm_resource_group.main.location
 #   resource_group_name        = azurerm_resource_group.main.name
@@ -126,8 +107,7 @@ resource "azurerm_resource_group" "main" {
 #   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
 # }
 
-# -- Phase 6 -- APIM Consumption gateway (Clerk JWT + rate limit) --
-# BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
+# -- APIM (Consumption tier — Clerk JWT + rate limit) ------------------------
 # module "apim" {
 #   source                     = "./modules/apim"
 #   name_prefix                = local.name_prefix

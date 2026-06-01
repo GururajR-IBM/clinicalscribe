@@ -22,6 +22,6 @@ output "location" {
 # output "key_vault_name" { ... }
 # output "key_vault_uri" { ... }
 
-# ── Azure OpenAI — BLOCKED on lab (enable on PAYG) ────────────────────────
-# output "aoai_endpoint" { ... }
-# output "aoai_name" { ... }
+# ── Azure OpenAI ──────────────────────────────────────────────────────────
+# Not provisioned by this stack — bring-your-own AOAI account via env vars
+# (AOAI_ENDPOINT, AOAI_KEY). See README.md.

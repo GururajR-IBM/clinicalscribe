@@ -45,13 +45,13 @@ variable "log_analytics_workspace_id" {
 }
 
 variable "aoai_endpoint" {
-  description = "Azure OpenAI endpoint for the vectorizer (text-embedding-ada-002)."
+  description = "Azure OpenAI endpoint for the vectorizer. Optional — supports BYO (external AOAI account)."
   type        = string
   default     = ""
 }
 
 variable "aoai_embedding_deployment" {
-  description = "Deployment name for the Ada-002 embedding model."
+  description = "Deployment name for the embedding model used by the AI Search vectorizer."
   type        = string
-  default     = "text-embedding-ada-002"
+  default     = "text-embedding-3-large"
 }

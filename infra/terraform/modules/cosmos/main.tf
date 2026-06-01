@@ -40,16 +40,12 @@ resource "azurerm_cosmosdb_account" "main" {
   }
 }
 
-# ── Database ───────────────────────────────────────────────────────────────
+# -- Database (serverless: no throughput block) -------------------------------
 
 resource "azurerm_cosmosdb_sql_database" "main" {
   name                = "clinicalscribe"
   resource_group_name = var.resource_group_name
   account_name        = azurerm_cosmosdb_account.main.name
-
-  autoscale_settings {
-    max_throughput = 10000 # 1 000–10 000 RU/s autoscale shared across containers
-  }
 }
 
 # ── Container: agent_runs ──────────────────────────────────────────────────

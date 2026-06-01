@@ -56,6 +56,8 @@ resource "azurerm_storage_management_policy" "media_lifecycle" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "storage" {
+  count = var.log_analytics_workspace_id != "" ? 1 : 0
+
   name                       = "${var.name_prefix}-storage-diag"
   target_resource_id         = "${azurerm_storage_account.media.id}/blobServices/default"
   log_analytics_workspace_id = var.log_analytics_workspace_id

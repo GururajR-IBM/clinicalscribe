@@ -1,11 +1,12 @@
-"""FastAPI app entrypoint for the Orchestrator service — Phase 2 (task 2.10).
+"""FastAPI app entrypoint for the Orchestrator service.
 
 Exposes one internal endpoint:
   POST /draft  — accepts transcript + metadata, returns SOAP JSON + codes + warnings.
                Called by the ingestion-worker after transcription.
 
-Phase 2: full 7-agent MAF supervisor topology replaces the Phase 1 drafter.
-Phase 1 drafter.py is retained as a fallback when AOAI_KEY is absent.
+Runs the 7-agent MAF supervisor topology. Bring-your-own LLM: set AOAI_ENDPOINT +
+AOAI_KEY (any Azure OpenAI account); when unset, agents return safe stub data so
+the pipeline still serves a 200 for local dev.
 """
 
 from __future__ import annotations
@@ -129,8 +130,6 @@ async def draft(body: DraftRequest) -> DraftResponse:
         input_tokens=state.total_input_tokens,
         output_tokens=state.total_output_tokens,
     )
-
-    return {"status": "ready"}
 
 
 @app.get("/", tags=["meta"])

@@ -1,4 +1,9 @@
-"""Configuration for the ingestion-worker service."""
+"""Configuration for the ingestion-worker service.
+
+Bring-your-own LLM: AOAI_ENDPOINT + AOAI_KEY point at any Azure OpenAI account
+(Whisper deployment). Blank values disable transcription and the worker falls
+back to passing through any pre-supplied transcript on the encounter row.
+"""
 
 from __future__ import annotations
 
@@ -11,12 +16,12 @@ class Settings(BaseSettings):
     # Postgres (encounter state)
     database_url: str = "postgresql://postgres:postgres@localhost:5432/clinicalscribe"
 
-    # Azure Blob Storage — audio download
+    # Azure Blob Storage -- audio download
     azure_storage_connection_string: str = ""
     azure_storage_container_encounter_media: str = "encounter-media"
 
-    # Azure OpenAI — Whisper transcription (phase 1 uses AOAI Whisper)
-    aoai_endpoint: str = "https://localhost"
+    # BYO Azure OpenAI -- Whisper transcription
+    aoai_endpoint: str = ""
     aoai_key: str = ""
     aoai_whisper_deployment: str = "whisper"
 
