@@ -1,0 +1,13 @@
+[project]
+name = "clinicalscribe-mcp-ehr-mock"
+version = "0.0.1"
+description = "MCP server simulating an EHR FHIR endpoint (synthetic patients only)."
+requires-python = ">=3.12,<3.13"
+dependencies = ["mcp>=1.2.0", "pydantic>=2.10.0", "httpx>=0.28.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ehr_mock"]

@@ -1,0 +1,52 @@
+[project]
+name = "clinicalscribe"
+version = "0.0.1"
+description = "Multi-agent, multi-modal medical documentation platform on Azure"
+requires-python = ">=3.12,<3.13"
+
+[tool.uv.workspace]
+members = [
+    "services/*",
+    "mcp-servers/*",
+    "packages/schemas-py",
+    "packages/prompts",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.28.0",
+    "pre-commit>=4.0.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/.venv", "**/node_modules", "**/dist", "**/.next", "**/_build"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "B", "UP", "S", "A", "C4", "T10", "PT", "RET", "SIM", "ASYNC"]
+ignore = ["S101"]  # allow `assert` in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*" = ["S", "PT011"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+warn_unused_configs = true
+disallow_untyped_decorators = false  # FastAPI decorators are not typed
+exclude = ['build/', 'dist/', '\.venv/']
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"

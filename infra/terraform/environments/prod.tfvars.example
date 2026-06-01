@@ -1,0 +1,6 @@
+environment = "prod"
+location    = "eastus2"
+owner       = "Gururajraibagi7@gmail.com"
+tags = {
+  cost_center = "personal"
+}

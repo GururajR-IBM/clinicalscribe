@@ -1,0 +1,9 @@
+# Injected at `terraform init -backend-config=environments/dev.backend.hcl`.
+# Fill in the values produced by `infra/terraform/bootstrap` and copy this file
+# to dev.backend.hcl (which is gitignored).
+
+resource_group_name  = "clinicalscribe-tfstate-rg"
+storage_account_name = "csbtfstateXXXXXXXX"
+container_name       = "tfstate"
+key                  = "dev/clinicalscribe.tfstate"
+use_azuread_auth     = true
