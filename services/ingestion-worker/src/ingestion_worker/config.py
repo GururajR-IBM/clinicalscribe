@@ -13,8 +13,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    # Postgres (encounter state)
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/clinicalscribe"
+    # Local DB (compliance-friendly: SQLite file, no infra, no network surface).
+    # Override with a Postgres URL only if you provision the postgres module.
+    database_url: str = "sqlite:///./clinicalscribe.db"
 
     # Azure Blob Storage -- audio download
     azure_storage_connection_string: str = ""

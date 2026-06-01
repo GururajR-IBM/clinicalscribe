@@ -169,10 +169,10 @@ resource "azurerm_resource_group" "main" {
 #         AOAI_ENDPOINT             = var.aoai_endpoint
 #         AOAI_WHISPER_DEPLOYMENT   = "whisper"
 #         ORCHESTRATOR_BASE_URL     = "http://${local.name_prefix}-orchestrator"
+#         DATABASE_URL              = "sqlite:////data/clinicalscribe.db"  # mount Azure Files at /data for persistence
 #       }
 #       secret_env = {
 #         AOAI_KEY                          = "aoai-key"
-#         DATABASE_URL                      = "postgres-url"
 #         AZURE_STORAGE_CONNECTION_STRING   = "storage-conn"
 #       }
 #     }

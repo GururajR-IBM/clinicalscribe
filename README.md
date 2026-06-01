@@ -33,7 +33,7 @@ All Terraform defaults target the cheapest viable SKU per service:
 | Service | Default SKU | ~$/mo idle |
 |---|---|---|
 | Cosmos DB | **Serverless** (pay per RU) | ~$0–5 |
-| Postgres Flexible | `B_Standard_B1ms` | ~$13 |
+| Postgres Flexible | _disabled_ -- SQLite file used instead | $0 |
 | AI Search | `basic` (1 replica) | ~$75 |
 | APIM | `Consumption_0` | ~$0 (pay per call) |
 | Storage | LRS, StandardV2 | ~$1 |
@@ -43,6 +43,8 @@ All Terraform defaults target the cheapest viable SKU per service:
 | AKS | not provisioned by Terraform | — |
 
 Bring-your-own AOAI sits outside this stack. AI Search basic dominates the bill; comment out that module and use Postgres + `pgvector` for sub-$30/mo total. Switch Cosmos to autoscale only above ~3 M RU/day per container.
+
+**Laptop / lab DB:** SQLite (via `aiosqlite`) is the default, kept in `./clinicalscribe.db`. Zero infra, no network surface, FIPS-validatable, HIPAA-compatible on encrypted disk — the right call for a work laptop and for compliance-bound demos. Provision the Terraform `postgres` module only if you outgrow it; just flip `DATABASE_URL` to a Postgres URI and apply the Alembic migrations under `db/`.
 
 ---
 

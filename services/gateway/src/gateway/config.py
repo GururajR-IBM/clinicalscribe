@@ -12,8 +12,9 @@ class Settings(BaseSettings):
     clerk_jwks_url: str = "https://clerk.your-domain.com/.well-known/jwks.json"
     clerk_issuer: str = "https://clerk.your-domain.com"
 
-    # Postgres
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/clinicalscribe"
+    # Local DB (gateway currently uses an in-memory store; this URL is reserved
+    # for the future asyncpg-backed store. Default = SQLite for laptop dev.)
+    database_url: str = "sqlite:///./clinicalscribe.db"
 
     # Azure Blob Storage
     azure_storage_account_name: str = ""
