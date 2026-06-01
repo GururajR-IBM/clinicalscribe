@@ -23,17 +23,17 @@ variable "vnet_address_space" {
 # Subnet CIDRs — must not overlap
 variable "subnet_aks_cidr" {
   type    = string
-  default = "10.10.0.0/22"  # 1022 hosts for AKS node pool
+  default = "10.10.0.0/22" # 1022 hosts for AKS node pool
 }
 
 variable "subnet_postgres_cidr" {
   type    = string
-  default = "10.10.4.0/27"  # /27 — delegated to Postgres Flexible Server
+  default = "10.10.4.0/27" # /27 — delegated to Postgres Flexible Server
 }
 
 variable "subnet_private_endpoints_cidr" {
   type    = string
-  default = "10.10.5.0/24"  # private endpoints for storage, kv, cosmos, search
+  default = "10.10.5.0/24" # private endpoints for storage, kv, cosmos, search
 }
 
 # Resource IDs for private endpoints — set after resources are provisioned

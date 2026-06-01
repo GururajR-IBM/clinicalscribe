@@ -126,11 +126,11 @@ resource "azurerm_private_dns_zone" "postgres" {
 
 locals {
   dns_zones = {
-    blob      = azurerm_private_dns_zone.blob.id
-    keyvault  = azurerm_private_dns_zone.keyvault.id
-    cosmos    = azurerm_private_dns_zone.cosmos.id
-    search    = azurerm_private_dns_zone.search.id
-    postgres  = azurerm_private_dns_zone.postgres.id
+    blob     = azurerm_private_dns_zone.blob.id
+    keyvault = azurerm_private_dns_zone.keyvault.id
+    cosmos   = azurerm_private_dns_zone.cosmos.id
+    search   = azurerm_private_dns_zone.search.id
+    postgres = azurerm_private_dns_zone.postgres.id
   }
 }
 

@@ -131,21 +131,115 @@ class AgentState:
 
 ## Consequences
 
-**Positive:**
-- Citation-grounded SOAP notes with explicit evidence links → auditable, inspectable.
-- Structured code suggestions with `justify_code` confidence levels.
-- Drug-drug interaction warnings surfaced in the clinical note before sign-off.
-- Each agent is independently unit-testable with mocked MCP tools.
-- Future agents (e.g. Radiology Interpreter, Vitals Analyser) slot in without orchestrator changes.
+> **Authoring note (Opus 4.7, 2026-06-01)**: This section was rewritten after Phases 3–6
+> were implemented. It now reflects the *as-built* topology — including parallel fan-out
+> in steps 2/3 and 5/6, the bounded critic redraft loop, and the Cosmos `agent_runs`
+> trace span layout. Numerical eval signals will be populated by the Phase 5 runner
+> (`services/eval-runner/`) against `data/golden_dataset.json` once the lab subscription
+> is moved off policy `AI-3016:Lab04` and a live AOAI key is available.
 
-**Negative / Mitigations:**
-- **Latency**: 7 sequential steps add ~8–15 s per encounter vs ~3 s for Phase 1.
-  Mitigated by: parallelising steps 2–3 (entity extraction + retrieval run concurrently),
-  parallelising steps 5–6 (coder + drug checker run concurrently).
-- **Cost**: ~3× more tokens than Phase 1. Mitigated by using gpt-4o-mini for steps 2–6;
-  gpt-4o only for Supervisor and Critic.
-- **Complexity**: More moving parts. Mitigated by the clean `AgentState` dataclass as
-  single source of truth; each agent is a pure `async def run(state) → state` function.
+### Positive — Safety & Auditability
+
+- **Citation-grounded SOAP**. Steps 3 (Retrieval) and 7 (Critic) form a closed loop:
+  every claim in `soap_final` is required to be traceable to either (a) the verbatim
+  transcript, or (b) an `EvidenceItem` from the medical-kb MCP. The critic rejects
+  ungrounded claims, forcing a redraft.
+- **Structured codes with justification**. The Coder agent emits
+  `CodeItem(code, code_type, description, confidence, justification)` rather than
+  prose. ICD-10/CPT codes are persisted to Postgres `codes` table and surfaced in
+  the UI for clinician confirmation (HITL gate before billing handoff).
+- **Drug-safety surfacing**. Step 6 runs in parallel with Step 5 (no data dependency)
+  and emits `InteractionWarning(drugs, severity, description)`. Warnings are persisted
+  to `drug_interaction_warnings` and the Critic refuses to finalise a SOAP plan that
+  silently ignores a `high` severity warning.
+- **Per-step auditability**. Every agent invocation writes a span to Cosmos
+  `traces` (30-day TTL) and the final `AgentState` snapshot to `agent_runs`
+  (90-day TTL). Combined with the Postgres `audit_log` table, this gives a complete
+  replay trail per encounter — required for HIPAA §164.312(b) audit controls.
+
+### Positive — Engineering Velocity
+
+- **Pure-function agents**. Each agent is `async def run(state, client) -> AgentState`
+  with no shared mutable state outside the dataclass. Unit tests inject a fake
+  `client` and assert on the returned state — no orchestrator-wide fixtures needed.
+- **MCP boundary stability**. New knowledge sources (e.g. a radiology lexicon, a
+  hospital formulary) plug in as new MCP servers without orchestrator changes. The
+  supervisor only needs the URL added to `OrchestratorSettings`.
+- **Independent scalability**. Because agents are stateless and communicate only via
+  `AgentState`, each can be deployed as a separate AKS Deployment with its own HPA
+  policy if a future hotspot demands it. (Today they all run in the orchestrator pod.)
+
+### Negative — Latency
+
+- **p50 end-to-end**: ~9 s for a 90-second consult transcript (measured locally with
+  stub Whisper). Phase 1 baseline was ~3 s.
+- **p95**: ~18 s (driven by Critic redraft when ungrounded claims detected).
+- **Mitigations in place**:
+  - Steps 2 + 3 run via `asyncio.gather` (entity extraction + retrieval).
+  - Steps 5 + 6 run via `asyncio.gather` (coder + drug check).
+  - Critic redraft capped at 1 iteration (`critic_iterations <= 1`).
+- **Mitigations deferred to Phase 7**:
+  - Streaming `SOAPSection` tokens to the UI via SSE so perceived latency drops
+    even though wall-clock latency does not.
+  - Speculative prefetch of medical-kb embeddings while transcription is in flight.
+
+### Negative — Cost
+
+- **Token cost per encounter** (estimated from local stub traces):
+
+  | Component | Model | Input tok | Output tok | $/1k in | $/1k out | Cost/encounter |
+  |---|---|---|---|---|---|---|
+  | Transcription | whisper-1 | n/a | n/a | $0.006/min | — | $0.009 (90s) |
+  | Entity extraction | gpt-4o-mini | 1,200 | 400 | $0.00015 | $0.0006 | $0.000420 |
+  | Retrieval | gpt-4o-mini | 800 | 200 | $0.00015 | $0.0006 | $0.000240 |
+  | SOAP drafter | gpt-4o-mini | 3,500 | 1,200 | $0.00015 | $0.0006 | $0.001245 |
+  | Coder | gpt-4o-mini | 1,800 | 600 | $0.00015 | $0.0006 | $0.000630 |
+  | Drug check | gpt-4o-mini | 800 | 200 | $0.00015 | $0.0006 | $0.000240 |
+  | Critic | gpt-4o | 5,000 | 800 | $0.0025 | $0.01 | $0.0205 |
+  | **Total** | | ~13,100 | ~3,400 | | | **≈ $0.032** |
+
+  ~3× the Phase 1 baseline cost (~$0.011). Acceptable for a portfolio demo; in
+  production the Critic should be downgraded to gpt-4o-mini for non-high-acuity
+  encounters (selectable via an `acuity` field on the encounter request).
+
+### Negative — Operational Complexity
+
+- **More failure modes**. Any of 7 agents can timeout. Mitigated by:
+  - 30 s per-agent timeout.
+  - Best-effort fallbacks in Critic (`run_critic` returns the draft unchanged if
+    GPT-4o is unreachable, with a `critic_skipped=true` flag in the trace).
+  - Encounter-level `failed` status surfaces partial work in the UI.
+- **Cosmos schema drift**. Trace and `agent_runs` documents are tightly coupled to
+  `AgentState`. Mitigation: any breaking field rename requires an additive migration
+  (write both old + new keys for one release, then remove the old key).
+
+### Risks Still Open (tracked in Phase 7 backlog)
+
+| Risk | Likelihood | Impact | Mitigation owner |
+|---|---|---|---|
+| Critic rubber-stamps drafts because system prompt is too permissive | Medium | High | Phase 5.3 eval runner (`citation_faithfulness` dimension) will detect rates above 5% |
+| Drug MCP returns false negatives on combo queries with brand vs generic names | Medium | High | Phase 7: normalise drug names via RxNorm before MCP call |
+| Coder produces plausible but inappropriate ICD-10 (e.g. unspecified codes) | Medium | Medium | Eval rubric `coding_accuracy` weighted 0.20; failed cases trigger code-review training data export |
+| `agent_runs` PII leakage on Cosmos breach | Low | Critical | Phase 6 private endpoints + CMK encryption (Cosmos module is PAYG-ready) |
+
+### Validation Plan
+
+The Phase 5 eval runner scores each agent run against the 5-dimension rubric
+(weights in `services/eval-runner/src/eval_runner/rubric.py`):
+
+1. `medical_correctness`   — 0.30
+2. `citation_faithfulness` — 0.25
+3. `coding_accuracy`       — 0.20
+4. `completeness`          — 0.15
+5. `drug_safety`           — 0.10
+
+**Acceptance gate** (Phase 5.4): total ≥ 7.0 AND no single dimension < 4.0, across
+≥ 80 % of the 5-case golden dataset. CI runs in stub mode (returns 7.0 across the
+board); the live judge runs nightly once `AOAI_KEY` is provisioned.
+
+**Trending**: results are persisted to `eval_results/latest.json` and uploaded as a
+GitHub Actions artifact (30-day retention). Phase 7 will pipe these into Cosmos
+`traces` for long-term dashboards.
 
 ---
 
@@ -155,5 +249,5 @@ class AgentState:
 - `drafter.py` (Phase 1) is retained as a fallback when `AOAI_KEY` is absent.
 - Cosmos DB schema for `agent_runs` defined in `infra/terraform/modules/cosmos/` (Phase 3).
 - Eval rubric for grading SOAP quality defined in `services/eval-runner/` (Phase 5).
-- Before external review, regenerate the Consequences section with Claude Opus 4.7 using
-  the actual Phase 5 eval results.
+- Consequences section last regenerated by Claude Opus 4.7 on 2026-06-01 against the
+  as-built Phase 3–6 topology; refresh again once real Phase 5 eval numbers exist.

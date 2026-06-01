@@ -41,7 +41,7 @@ variable "admin_username" {
 variable "delegated_subnet_id" {
   description = "Subnet ID delegated to Microsoft.DBforPostgreSQL/flexibleServers (private access)."
   type        = string
-  default     = ""   # empty = public access for lab; set in prod
+  default     = "" # empty = public access for lab; set in prod
 }
 
 variable "private_dns_zone_id" {

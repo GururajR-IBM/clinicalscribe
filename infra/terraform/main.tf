@@ -129,11 +129,13 @@ resource "azurerm_resource_group" "main" {
 # -- Phase 6 -- APIM Consumption gateway (Clerk JWT + rate limit) --
 # BLOCKED on lab sub by policy AI-3016:Lab04. Enable when on PAYG.
 # module "apim" {
-#   source = "./modules/apim"
+#   source                     = "./modules/apim"
 #   name_prefix                = local.name_prefix
 #   location                   = azurerm_resource_group.main.location
 #   resource_group_name        = azurerm_resource_group.main.name
 #   tags                       = local.tags
 #   sku_name                   = var.environment == "prod" ? "Developer_1" : "Consumption_0"
+#   clerk_jwks_uri             = var.clerk_jwks_uri
+#   gateway_backend_url        = var.gateway_backend_url
 #   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
 # }

@@ -41,3 +41,17 @@ variable "kv_admin_object_ids" {
   type        = list(string)
   default     = []
 }
+
+# ── Phase 6 — APIM (declared even while module is commented so terraform validate stays clean) ──
+
+variable "clerk_jwks_uri" {
+  description = "Clerk JWKS endpoint for APIM JWT validation policy (RS256)."
+  type        = string
+  default     = "https://clerk.example.com/.well-known/jwks.json"
+}
+
+variable "gateway_backend_url" {
+  description = "URL of the gateway microservice (AKS ingress) APIM proxies to."
+  type        = string
+  default     = "http://gateway.clinicalscribe.svc.cluster.local:8000"
+}

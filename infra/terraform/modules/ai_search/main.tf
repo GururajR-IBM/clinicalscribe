@@ -33,8 +33,8 @@ resource "azurerm_search_service" "main" {
   semantic_search_sku = var.sku == "basic" || var.sku == "free" ? null : "free"
 
   # RBAC — disable API-key auth once Workload Identity is configured (Phase 6)
-  local_authentication_enabled = true
-  public_network_access_enabled = true   # Set false + private endpoint in Phase 6
+  local_authentication_enabled  = true
+  public_network_access_enabled = true # Set false + private endpoint in Phase 6
 }
 
 # ── Diagnostic settings ────────────────────────────────────────────────────

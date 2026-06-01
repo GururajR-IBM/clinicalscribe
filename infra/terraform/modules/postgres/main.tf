@@ -29,14 +29,14 @@ resource "azurerm_postgresql_flexible_server" "main" {
   private_dns_zone_id = var.private_dns_zone_id != "" ? var.private_dns_zone_id : null
 
   backup_retention_days        = 7
-  geo_redundant_backup_enabled = false   # enable in prod Phase 6
+  geo_redundant_backup_enabled = false # enable in prod Phase 6
 
   high_availability {
-    mode = "Disabled"   # enable SameZone or ZoneRedundant in prod Phase 6
+    mode = "Disabled" # enable SameZone or ZoneRedundant in prod Phase 6
   }
 
   maintenance_window {
-    day_of_week  = 0   # Sunday
+    day_of_week  = 0 # Sunday
     start_hour   = 2
     start_minute = 0
   }
@@ -68,13 +68,13 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "azure_services" {
 resource "azurerm_postgresql_flexible_server_configuration" "log_statement" {
   name      = "log_statement"
   server_id = azurerm_postgresql_flexible_server.main.id
-  value     = "ddl"   # Log DDL statements for audit
+  value     = "ddl" # Log DDL statements for audit
 }
 
 resource "azurerm_postgresql_flexible_server_configuration" "log_min_duration" {
   name      = "log_min_duration_statement"
   server_id = azurerm_postgresql_flexible_server.main.id
-  value     = "1000"  # Log queries slower than 1 s
+  value     = "1000" # Log queries slower than 1 s
 }
 
 # ── Diagnostic settings ────────────────────────────────────────────────────

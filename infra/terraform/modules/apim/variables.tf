@@ -28,7 +28,7 @@ variable "publisher_email" {
 # Consumption tier for lab/dev; Developer or Premium for prod
 variable "sku_name" {
   type    = string
-  default = "Consumption_0"   # "Consumption_0" or "Developer_1"
+  default = "Consumption_0" # "Consumption_0" or "Developer_1"
 }
 
 # Clerk JWKS endpoint for JWT validation policy

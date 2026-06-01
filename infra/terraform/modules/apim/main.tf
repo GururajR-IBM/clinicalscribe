@@ -44,7 +44,7 @@ resource "azurerm_api_management_api" "clinicalscribe" {
   display_name          = "ClinicalScribe API"
   path                  = "api"
   protocols             = ["https"]
-  subscription_required = false   # Auth is Clerk JWT, not APIM subscription keys
+  subscription_required = false # Auth is Clerk JWT, not APIM subscription keys
 }
 
 # ── Product: default (groups all APIs) ────────────────────────────────────
