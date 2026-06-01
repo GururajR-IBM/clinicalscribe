@@ -1,0 +1,9 @@
+apiVersion: v2
+name: gateway
+description: ClinicalScribe API gateway service (FastAPI + Clerk JWT auth)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [clinicalscribe, gateway, fastapi]
+maintainers:
+  - name: clinicalscribe-team

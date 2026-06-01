@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ingestion-worker.fullname" . }}-config
+  labels:
+    {{- include "ingestion-worker.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.env.ENVIRONMENT | quote }}
+  LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
+  AZURE_STORAGE_CONTAINER_ENCOUNTER_MEDIA: {{ .Values.env.AZURE_STORAGE_CONTAINER_ENCOUNTER_MEDIA | quote }}
+  ORCHESTRATOR_BASE_URL: {{ .Values.env.ORCHESTRATOR_BASE_URL | quote }}
+  ORCHESTRATOR_TIMEOUT_SECONDS: {{ .Values.env.ORCHESTRATOR_TIMEOUT_SECONDS | quote }}
+  POLL_INTERVAL_SECONDS: {{ .Values.env.POLL_INTERVAL_SECONDS | quote }}
+  MAX_AUDIO_BYTES: {{ .Values.env.MAX_AUDIO_BYTES | quote }}
+  AOAI_WHISPER_DEPLOYMENT: {{ .Values.env.AOAI_WHISPER_DEPLOYMENT | quote }}

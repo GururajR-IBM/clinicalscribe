@@ -1,0 +1,148 @@
+name: cd
+
+# PAYG-GATED: This workflow requires GitHub Environment "production" with a manual
+# approval gate and the following secrets set at org/repo level:
+#
+#   AZURE_CLIENT_ID          — Workload Identity federated credential client ID
+#   AZURE_TENANT_ID          — Azure tenant ID
+#   AZURE_SUBSCRIPTION_ID    — PAYG subscription ID
+#   ACR_LOGIN_SERVER         — e.g. clinicalscribeacr.azurecr.io
+#   AKS_RESOURCE_GROUP       — AKS resource group name
+#   AKS_CLUSTER_NAME         — AKS cluster name
+#
+# To enable: create the "production" environment in GitHub → Settings → Environments
+# and add the secrets above. The workflow uses OIDC (no stored long-lived keys).
+#
+# Local/lab: this workflow will not trigger because DEPLOY_ENABLED is not set.
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false   # never cancel in-flight deploys
+
+permissions:
+  contents: read
+  id-token: write   # required for OIDC
+
+jobs:
+  # ── Guard: only run on successful CI and when deploy is enabled ──────────────
+  guard:
+    name: Guard · check deploy enabled
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        run: |
+          if [ "${{ vars.DEPLOY_ENABLED }}" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Deploy skipped: DEPLOY_ENABLED is not set to 'true'."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── Build & push images to ACR ───────────────────────────────────────────────
+  build-push:
+    name: Build + push · ${{ matrix.image.tag }}
+    needs: guard
+    if: needs.guard.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - { ctx: ., dockerfile: services/gateway/Dockerfile,           tag: gateway }
+          - { ctx: ., dockerfile: services/orchestrator/Dockerfile,      tag: orchestrator }
+          - { ctx: ., dockerfile: services/ingestion-worker/Dockerfile,  tag: ingestion-worker }
+          - { ctx: ., dockerfile: apps/web/Dockerfile,                   tag: web }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC — no stored credentials)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to ACR
+        run: az acr login --name ${{ secrets.ACR_LOGIN_SERVER }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.image.ctx }}
+          file: ${{ matrix.image.dockerfile }}
+          push: true
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/${{ matrix.image.tag }}:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/${{ matrix.image.tag }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Deploy to AKS via Helmfile ────────────────────────────────────────────────
+  deploy:
+    name: Deploy · AKS
+    needs: build-push
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: '3.16.4'
+
+      - name: Install Helmfile
+        run: |
+          curl -fsSL https://github.com/helmfile/helmfile/releases/download/v0.169.1/helmfile_linux_amd64.tar.gz | tar xz
+          sudo mv helmfile /usr/local/bin/
+
+      - name: Install helm-diff plugin
+        run: helm plugin install https://github.com/databus23/helm-diff
+
+      - name: Helmfile diff (dry-run)
+        working-directory: infra/helm
+        run: |
+          helmfile -e prod diff \
+            --set gateway.image.tag=${{ github.sha }} \
+            --set orchestrator.image.tag=${{ github.sha }} \
+            --set ingestion-worker.image.tag=${{ github.sha }}
+
+      - name: Helmfile apply
+        working-directory: infra/helm
+        run: |
+          helmfile -e prod sync \
+            --set gateway.image.tag=${{ github.sha }} \
+            --set orchestrator.image.tag=${{ github.sha }} \
+            --set ingestion-worker.image.tag=${{ github.sha }}
+
+      - name: Verify rollout
+        run: |
+          kubectl rollout status deployment/gateway -n clinicalscribe --timeout=120s
+          kubectl rollout status deployment/orchestrator -n clinicalscribe --timeout=120s
+          kubectl rollout status deployment/ingestion-worker -n clinicalscribe --timeout=120s

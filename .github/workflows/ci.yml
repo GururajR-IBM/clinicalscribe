@@ -69,6 +69,38 @@ jobs:
         continue-on-error: true
       - run: pnpm --filter @clinicalscribe/web build
 
+  e2e:
+    name: e2e · Playwright
+    runs-on: ubuntu-latest
+    needs: node
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.3.0'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile || pnpm install
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+      - name: Run Playwright tests
+        run: pnpm test:e2e
+        env:
+          # Tests skip auth-gated scenarios unless a test key is provided
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST || '' }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_TEST || '' }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/e2e/report/
+          retention-days: 7
+
   terraform:
     name: terraform · fmt + validate
     runs-on: ubuntu-latest
@@ -85,6 +117,21 @@ jobs:
           tflint_version: latest
       - run: tflint --chdir infra/terraform --recursive
         continue-on-error: true
+
+  helm:
+    name: helm · lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: '3.16.4'
+      - name: Lint gateway
+        run: helm lint infra/helm/gateway
+      - name: Lint orchestrator
+        run: helm lint infra/helm/orchestrator
+      - name: Lint ingestion-worker
+        run: helm lint infra/helm/ingestion-worker
 
   docker:
     name: docker · ${{ matrix.image }}

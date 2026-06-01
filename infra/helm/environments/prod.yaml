@@ -1,0 +1,32 @@
+# Production environment overrides (PAYG — enable when on paid subscription)
+# Requires: AKS with Workload Identity, Key Vault secrets synced, Application Gateway
+
+gateway:
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+  ingress:
+    enabled: true
+  podAnnotations:
+    azure.workload.identity/use: "true"
+  serviceAccount:
+    annotations:
+      azure.workload.identity/client-id: ""  # set via --set or CI secret
+
+orchestrator:
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+  podAnnotations:
+    azure.workload.identity/use: "true"
+  serviceAccount:
+    annotations:
+      azure.workload.identity/client-id: ""
+
+ingestionWorker:
+  replicaCount: 1
+  podAnnotations:
+    azure.workload.identity/use: "true"
+  serviceAccount:
+    annotations:
+      azure.workload.identity/client-id: ""

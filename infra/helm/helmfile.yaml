@@ -1,0 +1,58 @@
+# Helmfile — ClinicalScribe Phase 1 service stack
+#
+# Usage:
+#   helmfile -e lab sync          # local / lab values
+#   helmfile -e prod sync         # PAYG production values
+#   helmfile -e prod diff         # dry-run diff before deploy
+#
+# Prerequisites (PAYG):
+#   helm plugin install https://github.com/databus23/helm-diff
+#   az aks get-credentials --resource-group clinicalscribe-rg --name clinicalscribe-aks
+#   kubectl create namespace clinicalscribe
+
+helmDefaults:
+  wait: true
+  timeout: 300
+  atomic: true
+  cleanupOnFail: true
+  historyMax: 5
+
+repositories: []
+# Add external chart repos here when needed, e.g.:
+# - name: ingress-nginx
+#   url: https://kubernetes.github.io/ingress-nginx
+
+environments:
+  lab:
+    values:
+      - environments/lab.yaml
+  prod:
+    values:
+      - environments/prod.yaml
+
+releases:
+  - name: gateway
+    namespace: clinicalscribe
+    createNamespace: true
+    chart: ./gateway
+    values:
+      - gateway/values.yaml
+      - "{{ `{{ .Environment.Values.gateway | toYaml }}` }}"
+
+  - name: orchestrator
+    namespace: clinicalscribe
+    createNamespace: true
+    chart: ./orchestrator
+    values:
+      - orchestrator/values.yaml
+      - "{{ `{{ .Environment.Values.orchestrator | toYaml }}` }}"
+
+  - name: ingestion-worker
+    namespace: clinicalscribe
+    createNamespace: true
+    chart: ./ingestion-worker
+    values:
+      - ingestion-worker/values.yaml
+      - "{{ `{{ .Environment.Values.ingestionWorker | toYaml }}` }}"
+    needs:
+      - clinicalscribe/orchestrator

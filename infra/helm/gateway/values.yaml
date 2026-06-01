@@ -1,0 +1,93 @@
+replicaCount: 2
+
+image:
+  repository: clinicalscribeacr.azurecr.io/gateway
+  pullPolicy: IfNotPresent
+  tag: ""  # overridden by CI: --set image.tag=<sha>
+
+serviceAccount:
+  create: true
+  annotations: {}  # PAYG: azure.workload.identity/client-id: <client-id>
+  name: ""
+
+podAnnotations:
+  azure.workload.identity/use: "false"  # set "true" on PAYG with federated identity
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: true
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: false  # enable when AKS Ingress Controller / App Gateway is provisioned
+  className: azure-application-gateway
+  annotations: {}
+  hosts:
+    - host: api.clinicalscribe.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: clinicalscribe-tls
+      hosts: [api.clinicalscribe.example.com]
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 15
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+env:
+  ENVIRONMENT: production
+  LOG_LEVEL: info
+  AZURE_STORAGE_CONTAINER_ENCOUNTER_MEDIA: encounter-media
+
+# Sensitive values — reference AKS-synced Key Vault secrets
+envFromSecret:
+  secretName: clinicalscribe-gateway-secrets
+  keys:
+    - CLERK_JWKS_URL
+    - CLERK_ISSUER
+    - DATABASE_URL
+    - AZURE_STORAGE_CONNECTION_STRING
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: gateway

@@ -1,0 +1,55 @@
+replicaCount: 1
+
+image:
+  repository: clinicalscribeacr.azurecr.io/ingestion-worker
+  pullPolicy: IfNotPresent
+  tag: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  azure.workload.identity/use: "false"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: false  # worker writes temp audio files to /tmp
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# No HPA — queue-depth autoscaling via KEDA (Phase 3) will replace this
+autoscaling:
+  enabled: false
+
+env:
+  ENVIRONMENT: production
+  LOG_LEVEL: info
+  AZURE_STORAGE_CONTAINER_ENCOUNTER_MEDIA: encounter-media
+  ORCHESTRATOR_BASE_URL: http://orchestrator:8001
+  ORCHESTRATOR_TIMEOUT_SECONDS: "300"
+  POLL_INTERVAL_SECONDS: "5"
+  MAX_AUDIO_BYTES: "26214400"
+  AOAI_WHISPER_DEPLOYMENT: whisper
+
+envFromSecret:
+  secretName: clinicalscribe-worker-secrets
+  keys:
+    - DATABASE_URL
+    - AZURE_STORAGE_CONNECTION_STRING
+    - AOAI_ENDPOINT
+    - AOAI_KEY

@@ -1,0 +1,80 @@
+replicaCount: 2
+
+image:
+  repository: clinicalscribeacr.azurecr.io/orchestrator
+  pullPolicy: IfNotPresent
+  tag: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  azure.workload.identity/use: "false"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: true
+
+service:
+  type: ClusterIP
+  port: 8001
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8001
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8001
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+env:
+  ENVIRONMENT: production
+  LOG_LEVEL: info
+  AOAI_API_VERSION: "2024-08-01-preview"
+  AOAI_DRAFT_MODEL: gpt-4o-mini
+  AOAI_REVIEW_MODEL: gpt-4o
+  PORT: "8001"
+
+envFromSecret:
+  secretName: clinicalscribe-orchestrator-secrets
+  keys:
+    - AOAI_ENDPOINT
+    - AOAI_KEY
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: orchestrator

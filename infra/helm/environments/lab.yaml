@@ -1,0 +1,23 @@
+# Lab environment overrides (single-replica, no autoscaling, no ingress)
+# PAYG-ready: un-comment prod.yaml values when switching accounts.
+
+gateway:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  ingress:
+    enabled: false
+  podAnnotations:
+    azure.workload.identity/use: "false"
+
+orchestrator:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podAnnotations:
+    azure.workload.identity/use: "false"
+
+ingestionWorker:
+  replicaCount: 1
+  podAnnotations:
+    azure.workload.identity/use: "false"

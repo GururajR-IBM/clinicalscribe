@@ -1,0 +1,9 @@
+apiVersion: v2
+name: ingestion-worker
+description: ClinicalScribe ingestion worker — polls for pending encounters, transcribes audio, calls orchestrator
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [clinicalscribe, ingestion, whisper, worker]
+maintainers:
+  - name: clinicalscribe-team

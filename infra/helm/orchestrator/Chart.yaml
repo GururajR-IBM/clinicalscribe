@@ -1,0 +1,9 @@
+apiVersion: v2
+name: orchestrator
+description: ClinicalScribe SOAP drafter orchestrator (internal — not publicly exposed)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [clinicalscribe, orchestrator, soap, llm]
+maintainers:
+  - name: clinicalscribe-team

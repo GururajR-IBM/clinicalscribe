@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint --max-warnings=0",
     "type-check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "next": "^15.1.0",
@@ -32,6 +34,7 @@
     "eslint-config-next": "^15.1.0",
     "postcss": "^8.4.0",
     "autoprefixer": "^10.4.0",
-    "vitest": "^2.1.0"
+    "vitest": "^2.1.0",
+    "@playwright/test": "^1.49.0"
   }
 }
