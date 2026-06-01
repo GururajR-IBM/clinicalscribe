@@ -55,3 +55,17 @@ variable "gateway_backend_url" {
   type        = string
   default     = "http://gateway.clinicalscribe.svc.cluster.local:8000"
 }
+
+# ── Container Apps (BYO AOAI) ─────────────────────────────────────────────
+
+variable "aoai_endpoint" {
+  description = "Bring-your-own Azure OpenAI endpoint. Injected into container apps as AOAI_ENDPOINT."
+  type        = string
+  default     = ""
+}
+
+variable "image_tag" {
+  description = "Container image tag pushed to ACR (e.g. git short SHA). All services share one tag."
+  type        = string
+  default     = "latest"
+}

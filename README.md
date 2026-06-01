@@ -38,9 +38,30 @@ All Terraform defaults target the cheapest viable SKU per service:
 | APIM | `Consumption_0` | ~$0 (pay per call) |
 | Storage | LRS, StandardV2 | ~$1 |
 | Log Analytics | PerGB2018, 30-day retention | ~$0 idle |
+| Container Registry | Basic | ~$5 |
+| Container Apps | Consumption, scale-to-zero | ~$0 idle |
 | AKS | not provisioned by Terraform | — |
 
 Bring-your-own AOAI sits outside this stack. AI Search basic dominates the bill; comment out that module and use Postgres + `pgvector` for sub-$30/mo total. Switch Cosmos to autoscale only above ~3 M RU/day per container.
+
+---
+
+## Compute plane: Azure Container Apps
+
+All 9 services (gateway, orchestrator, ingestion-worker, eval-runner, 4 MCP servers, web) run on **Azure Container Apps** with scale-to-zero. The `container_apps` Terraform module provisions:
+
+- **Azure Container Registry** (Basic SKU, ~$5/mo) for images
+- **Container Apps Environment** wired to Log Analytics
+- One **user-assigned managed identity** shared by every app, granted `AcrPull` on the registry and `Key Vault Secrets User` on the vault (secrets injected via `secret_env`)
+- Nine **Container Apps**, `min_replicas = 0`, internal DNS for everything except `gateway` + `web`
+
+Build + push images (one tag for all services):
+```powershell
+.\scripts\containers\build-and-push.ps1 -AcrName <acr-name> -Tag <git-sha>
+terraform -chdir=infra/terraform apply -var image_tag=<git-sha>
+```
+
+Helm charts in `infra/helm/` remain for the AKS path if you ever need it.
 
 ---
 
