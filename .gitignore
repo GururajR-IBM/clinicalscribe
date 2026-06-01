@@ -13,6 +13,7 @@ desktop.ini
 !.vscode/tasks.json
 *.swp
 *.swo
+clinicalscribe-planning/
 
 # ── Node / Frontend ───────────────────────────────────────────────────
 node_modules/
@@ -57,6 +58,8 @@ secrets.*
 *.tfstate.*
 *.tfvars
 !**/environments/*.tfvars.example
+**/environments/*.backend.hcl
+!**/environments/*.backend.hcl.example
 crash.log
 crash.*.log
 override.tf
@@ -65,6 +68,11 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
+
+# ── Account / state backups (local only) ──────────────────────────────
+backups/
+*.tfstate.backup
+azure-context.local.json
 
 # ── Docker ────────────────────────────────────────────────────────────
 *.tar

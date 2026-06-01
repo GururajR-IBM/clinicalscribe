@@ -1,0 +1,7 @@
+environment = "lab"
+location    = "eastus"
+owner       = "Gururajraibagi7@gmail.com"
+tags = {
+  cost_center = "learn-sandbox"
+  ephemeral   = "true"
+}

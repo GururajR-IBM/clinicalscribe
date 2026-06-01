@@ -1,16 +1,16 @@
 variable "environment" {
-  description = "Environment name (dev | prod). Used in resource naming and tagging."
+  description = "Environment name (lab | dev | prod). Used in resource naming and tagging."
   type        = string
   validation {
-    condition     = contains(["dev", "prod"], var.environment)
-    error_message = "environment must be one of: dev, prod."
+    condition     = contains(["lab", "dev", "prod"], var.environment)
+    error_message = "environment must be one of: lab, dev, prod."
   }
 }
 
 variable "location" {
   description = "Primary Azure region."
   type        = string
-  default     = "eastus2"
+  default     = "eastus"
 }
 
 variable "project" {
